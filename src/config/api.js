@@ -8,7 +8,8 @@ export const API = {
     REFRESH: `/auth/refresh-token`,
     LOGOUT: `/auth/logout`,
   },
-  PRODUCT: {
-    GET:'products'
-  }
+  PRODUCT: "products",
+  UPLOAD: {
+    IMAGES: "/upload/images",
+  },
 };

@@ -1,22 +1,26 @@
 import { API } from "../config/api";
-import { del, get, postForm, put } from "../utils/axiosApi";
+import { del, get, patch, postJson, put } from "../utils/axiosApi";
 
-export const getProducts = async (page) => {
-  const products = await get(API.PRODUCT.GET + `?page=${page}`);
+export const getProducts = (page) => {
+  const products = get(API.PRODUCT + `?page=${page}`);
   return products;
 };
 
-export const addProduct = async (data) => {
-  const product = await postForm(API.PRODUCT.GET, data);
+export const addProduct = (data) => {
+  const product = postJson(API.PRODUCT, data);
   return product;
 };
 
-export const editProduct = async (data, id) => {
-  const product = await put(API.PRODUCT.GET + `/${id}`, data);
+export const editProduct = (data, id) => {
+  const product = patch(API.PRODUCT + `/${id}`, data);
   return product;
 };
 
-export const deleteProduct = async (id) => {
-  const product = await del(API.PRODUCT.GET + `/${id}`);
+export const deleteProduct = (productId) => {
+  const product = del(API.PRODUCT + `/${productId}`);
   return product;
-}
+};
+
+export const getProductById = (productId) => {
+  return get(API.PRODUCT + `/${productId}`);
+};

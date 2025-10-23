@@ -128,7 +128,7 @@ export default function Product() {
             type="primary"
             icon={<EditOutlined />}
             size="small"
-            onClick={() => onClickEdit(record.product)}
+            onClick={() => onClickEdit(record.key)}
           >
             Sửa
           </Button>
@@ -157,9 +157,9 @@ export default function Product() {
     product: product,
   }));
 
-  const onClickEdit = (product) => {
-    navigate(`/admin/auth/products/edit/${product._id}`, {
-      state: { product },
+  const onClickEdit = (productId) => {
+    navigate(`/admin/auth/products/edit/${productId}`, {
+      state: { productId },
     });
   };
 

@@ -95,17 +95,19 @@ export const get = async (api) => {
   return res.data;
 };
 
-export const postJson = (api, data) => {
-  return axiosApi.post(api, data, {
+export const postJson = async (api, data) => {
+  const res = await axiosApi.post(api, data, {
     headers: { "Content-Type": "application/json" },
   });
+  return res.data;
 };
 
 // Khi gửi FormData
-export const postForm = (api, formData) => {
-  return axiosApi.post(api, formData, {
+export const postForm = async (api, formData) => {
+  const res = await axiosApi.post(api, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+  return res.data;
 };
 
 export const put = async (api, data) => {
