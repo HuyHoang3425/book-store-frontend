@@ -2,25 +2,25 @@ import { API } from "../config/api";
 import { del, get, patch, postJson, put } from "../utils/axiosApi";
 
 export const getProducts = (page) => {
-  const products = get(API.PRODUCT + `?page=${page}`);
-  return products;
+  return get(API.PRODUCT + `?page=${page}`);
 };
 
 export const addProduct = (data) => {
-  const product = postJson(API.PRODUCT, data);
-  return product;
+  return postJson(API.PRODUCT, data);
 };
 
 export const editProduct = (data, id) => {
-  const product = patch(API.PRODUCT + `/${id}`, data);
-  return product;
+  return patch(API.PRODUCT + `/${id}`, data);
 };
 
 export const deleteProduct = (productId) => {
-  const product = del(API.PRODUCT + `/${productId}`);
-  return product;
+  return del(API.PRODUCT + `/${productId}`);
 };
 
 export const getProductById = (productId) => {
   return get(API.PRODUCT + `/${productId}`);
+};
+
+export const searchProduct = (keyword) => {
+  return get(API.SEARCH + `/products?keyword=${keyword}`);
 };

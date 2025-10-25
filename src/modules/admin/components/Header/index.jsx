@@ -8,13 +8,12 @@ import {
 import { Dropdown } from "antd";
 import { useContext } from "react";
 import {
-  IoIosSearch,
-  IoMdNotificationsOutline,
   IoIosArrowDown,
 } from "react-icons/io";
 import { AuthContext } from "../../contexts/authContext";
 import {useDispatch, useSelector} from "react-redux";
 import { logout } from "../../../../action/auth";
+import Search from "../Search";
 
 const itemsMenuDropdown = [
   {
@@ -72,17 +71,9 @@ function HeaderDefault(props) {
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
         </div>
         <div className="header__right flex gap-8 items-center">
-          <div className="header__search flex relative">
-            <input
-              type="text"
-              placeholder="Search..."
-              className="rounded-4xl px-6 py-3 bg-[#F1F5F7] w-[300px] outline-none"
-            />
-            <IoIosSearch className=" text-2xl absolute top-1/2 right-4 -translate-y-1/2 flex items-center justify-center" />
-          </div>
-          <div className="header__notify">
-            <IoMdNotificationsOutline className="text-2xl" />
-          </div>
+
+          <Search/>
+
           <div className="header__avatar ml-10 flex gap-4 items-center">
             <Dropdown
               menu={{

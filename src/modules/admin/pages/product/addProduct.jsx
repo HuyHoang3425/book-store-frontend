@@ -41,6 +41,7 @@ const AddProduct = () => {
       });
     }
     try {
+      setLoading(true);
       const data = await uploadImages(formData);
       return data.data;
     } catch {

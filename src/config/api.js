@@ -12,4 +12,5 @@ export const API = {
   UPLOAD: {
     IMAGES: "/upload/images",
   },
+  SEARCH:"search",
 };
