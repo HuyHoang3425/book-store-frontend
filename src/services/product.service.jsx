@@ -21,6 +21,14 @@ export const getProductById = (productId) => {
   return get(API.PRODUCT + `/${productId}`);
 };
 
-export const searchProduct = (keyword) => {
-  return get(API.SEARCH + `/products?keyword=${keyword}`);
+export const searchProduct = (keyword, page = 1, sortKey, sortValue) => {
+  const query = new URLSearchParams({ page });
+  if (keyword) {
+    query.append("keyword", keyword);
+  }
+  if (sortKey && sortValue) {
+    query.append("sortKey", sortKey);
+    query.append("sortValue", sortValue);
+  }
+  return get(API.SEARCH + `/products?` + query);
 };

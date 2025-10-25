@@ -4,7 +4,7 @@ import { searchProduct } from "../services/product.service";
 // createAsyncThunk
 export const fetchSearchData = createAsyncThunk(
   "search/fetchSearchData",
-  async (query, { rejectWithValue }) => {
+  async (query, sortKey, sorValue, { rejectWithValue }) => {
     try {
       // Nếu query rỗng, trả về null để hiển thị danh sách gốc
       if (!query || query.trim() === "") {
@@ -24,6 +24,8 @@ export const fetchSearchData = createAsyncThunk(
 // Khởi tạo state
 const initialState = {
   query: "",
+  sortKey: null,
+  sortValue: null,
   data: null,
   loading: false,
   error: null,
@@ -36,6 +38,10 @@ const searchSlice = createSlice({
   reducers: {
     setQuery: (state, action) => {
       state.query = action.payload;
+    },
+    setSort: (state, action) => {
+      state.sortKey = action.payload.sortKey;
+      state.sortValue = action.payload.sorValue;
     },
     clearSearch: (state) => {
       state.query = "";
@@ -63,5 +69,5 @@ const searchSlice = createSlice({
   },
 });
 
-export const { setQuery, clearSearch } = searchSlice.actions;
+export const { setQuery, setSort, clearSearch } = searchSlice.actions;
 export default searchSlice.reducer;

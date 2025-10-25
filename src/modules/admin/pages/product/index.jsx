@@ -46,10 +46,10 @@ export default function Product() {
   const navigate = useNavigate();
 
   // Hàm fetch products
-  const fetchProducts = async (page = 1) => {
+  const fetchProducts = async (page = 1, sortKey, sortValue) => {
     setLoading(true);
     try {
-      const res = await getProducts(page);
+      const res = await getProducts(page, sortKey, sortValue);
       setProducts(res.data.products || []);
       setTotalProducts(res.data.totalProducts || 0);
       setPage(page);
@@ -223,6 +223,19 @@ export default function Product() {
     },
   ];
 
+  const sortMap = {
+    priceAsc: { sortKey: "price", sortValue: "asc" },
+    priceDesc: { sortKey: "price", sortValue: "desc" },
+    titleAsc: { sortKey: "title", sortValue: "asc" },
+    titleDesc: { sortKey: "title", sortValue: "desc" },
+  };
+
+  const handleChangeSort = (value) => {
+    const sort = sortMap[value] || {};
+    fetchProducts(1, sort.sortKey, sort.sortValue);
+  };
+
+
   return (
     <div className="p-4">
       {/* Thanh công cụ */}
@@ -288,8 +301,8 @@ export default function Product() {
           {/* Sort */}
           <Select
             defaultValue="Sắp xếp"
-            style={{ width: "150px" }}
-            // onChange={}
+            style={{ width: "200px" }}
+            onChange={handleChangeSort}
             options={[
               { value: "priceAsc", label: "Giá từ thấp tới cao" },
               { value: "priceDesc", label: "Giá từ cao tới thấp" },
@@ -300,14 +313,11 @@ export default function Product() {
           {/* End Sort */}
 
           {/* Action */}
-          <div style={{ position: "relative", display: "inline-block" }}>
+          <Space.Compact style={{ width: "300px" }}>
             <Select
-              style={{
-                width: 200,
-                borderRadius: 6,
-              }}
+              placeholder="Chọn hành động"
+              style={{ width: "calc(100% - 100px)" }}
               allowClear
-              defaultValue="Chọn hành động"
               options={[
                 { value: "deleteAll", label: "🗑 Xoá tất cả" },
                 { value: "available", label: "✅ Còn hàng" },
@@ -315,15 +325,8 @@ export default function Product() {
                 { value: "discontinued", label: "🕒 Ngừng kinh doanh" },
               ]}
             />
-
-            <Button
-              type="primary"
-              className="absolute right-[10px]"
-              style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
-            >
-              Áp dụng
-            </Button>
-          </div>
+            <Button type="primary">Áp dụng</Button>
+          </Space.Compact>
           {/* End Action */}
 
           {/* Restore */}
