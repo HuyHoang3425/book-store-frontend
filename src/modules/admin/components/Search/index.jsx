@@ -1,41 +1,39 @@
 import { IoIosSearch, IoMdNotificationsOutline } from "react-icons/io";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  clearFilters,
-  clearSearch,
-  fetchProducts,
-  setIsSearch,
-  setKeyword,
-  setPage,
-  setSort,
-} from "../../../../redux/productSlice";
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import { SearchContext } from "../../contexts/searchContext";
 
 function Search() {
-  const { keyword, sortKey, sortValue } = useSelector((state) => state.product);
-  const dispatch = useDispatch();
+  const {
+    keyword,
+    setKeyword,
+    setIsSearch,
+    setHasSearched,
+    hasSearched,
+    setPage,
+    resetFilters, // Dùng helper function
+  } = useContext(SearchContext);
+
+  useEffect(() => {
+    if (keyword.trim() === "" && hasSearched) {
+      setIsSearch(true);
+      setPage(1);
+      resetFilters(); // Reset tất cả filters
+      setHasSearched(false);
+    }
+  }, [keyword, hasSearched]);
 
   const handleSearch = () => {
-    if (keyword.trim() && keyword.trim() !== "") {
-      dispatch(setPage(1));
-      dispatch(setSort({ sortKey: "", sortValue: "" }));
-      dispatch(setIsSearch());
-      dispatch(clearFilters());
-      dispatch(fetchProducts());
-    } else {
-      dispatch(clearSearch());
+    if (keyword.trim() !== "") {
+      setIsSearch(true);
+      setHasSearched(true);
+      setPage(1);
+      resetFilters(); // Reset tất cả filters khi search
     }
   };
 
-  useEffect(() => {
-    if (keyword.trim() && keyword.trim() !== "") {
-      dispatch(fetchProducts());
-    }
-  }, [sortKey, sortValue]);
-
   const handleClear = () => {
-    dispatch(clearSearch());
-    dispatch(clearFilters());
+    setKeyword("");
+    setPage(1);
   };
 
   const handleKeyDown = (e) => {
@@ -45,10 +43,9 @@ function Search() {
   };
 
   const handleChange = (e) => {
-    if (e.target.value && e.target.value.trim() !== "")
-      dispatch(setKeyword(e.target.value));
-    else dispatch(clearSearch());
+    setKeyword(e.target.value);
   };
+
   return (
     <>
       <div className="header__search flex relative">
@@ -75,6 +72,7 @@ function Search() {
           className="text-2xl absolute top-1/2 right-4 -translate-y-1/2 flex items-center justify-center cursor-pointer hover:text-blue-600"
         />
       </div>
+
       <div className="header__notify">
         <IoMdNotificationsOutline className="text-2xl" />
       </div>

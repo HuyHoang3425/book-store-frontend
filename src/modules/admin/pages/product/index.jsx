@@ -15,77 +15,82 @@ import {
   DeleteOutlined,
   FilterOutlined,
 } from "@ant-design/icons";
-import { useEffect, useState } from "react";
-import { deleteProduct } from "../../../../services/product.service";
-import { Link, useNavigate, useOutletContext } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
+import { useContext, useEffect, useState } from "react";
 import {
-  fetchProducts,
-  setFilters,
-  setPage,
-  setSort,
-} from "../../../../redux/productSlice";
+  deleteProduct,
+  getProducts,
+} from "../../../../services/product.service";
+import { Link, useNavigate, useOutletContext } from "react-router-dom";
+import { SearchContext } from "../../contexts/searchContext";
 
 export default function Product() {
   const [products, setProducts] = useState([]);
-  const [form] = Form.useForm();
+  const [limit, setLimit] = useState(0);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [loading, setLoading] = useState(false);
 
+  const {
+    keyword,
+    isSearch,
+    setIsSearch,
+    page,
+    setPage,
+    filters,
+    updateFilters,
+    resetFilters,
+  } = useContext(SearchContext);
+
+  const [form] = Form.useForm();
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalFilterOpen, setIsModalFilterOpen] = useState(false);
 
-  const {
-    data,
-    totalProducts,
-    limit,
-    page,
-    error,
-    keyword,
-    loading,
-    sortKey,
-    sortValue,
-    isSearch,
-    filters,
-  } = useSelector((state) => state.product);
-  const dispatch = useDispatch();
-
   const { notification } = useOutletContext();
-
   const navigate = useNavigate();
 
-  //fetch lấy dữ liệu sản phẩm
-  const fetchDataProducts = () => {
-    dispatch(fetchProducts())
-      .unwrap()
-      .then((data) => {
-        setProducts(data.products);
-      })
-      .catch((err) => {
-        notification.error({
-          message: err?.message,
-          duration: 3,
-        });
+  const fetchDataProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await getProducts({
+        page,
+        keyword: keyword.trim(),
+        ...filters, // Spread tất cả filters vào API
       });
-  };
-  useEffect(() => {
-    fetchDataProducts();
-  }, [page, sortKey, isSearch, sortValue]);
-
-  useEffect(() => {
-    if (error) {
+      const { products, limit, totalProducts } = res.data;
+      setProducts(products || []);
+      setLimit(limit || 0);
+      setTotalProducts(totalProducts || 0);
+    } catch (err) {
       notification.error({
-        message: error?.message,
+        message: err?.message || "Tải danh sách sản phẩm thất bại!",
         duration: 3,
       });
+    } finally {
+      setLoading(false);
     }
-  }, [error]);
+  };
 
-  //hàm mở modal xoá sản phẩm
+  useEffect(() => {
+    if (isSearch) {
+      fetchDataProducts();
+      setIsSearch(false);
+    }
+  }, [isSearch]);
+
+  // Gọi API khi filters thay đổi
+  useEffect(() => {
+    fetchDataProducts();
+  }, [page, filters]);
+
+  useEffect(() => {
+    fetchDataProducts();
+  }, []);
+
   const showModalDelete = (product) => {
     setIsModalDeleteOpen(true);
     setSelectedProduct(product._id);
   };
-  //hàm xác nhận xoá sản phẩm
+
   const handleOk = async () => {
     setIsModalDeleteOpen(false);
     try {
@@ -102,39 +107,45 @@ export default function Product() {
       });
     }
   };
-  //hàm huỷ xoá sản phẩm
+
   const handleCancel = () => {
     setIsModalDeleteOpen(false);
   };
-  //hàm chọn sửa sản phẩm
+
   const onClickEdit = (productId) => {
     navigate(`/admin/auth/products/edit/${productId}`, {
       state: { productId },
     });
   };
 
-  //lọc sản phẩm
   const showModalFilter = () => {
+    // Set giá trị hiện tại vào form
+    form.setFieldsValue({
+      status: filters.status,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice,
+    });
     setIsModalFilterOpen(true);
   };
+
   const handleCancelFilter = () => {
     setIsModalFilterOpen(false);
   };
-  //end lọc sản phẩm
 
-  const displayData =
-    data?.length > 0
-      ? data
-      : data?.length === 0 && keyword.trim() !== ""
-      ? []
-      : products;
+  const handleOkFilter = () => {
+    const values = form.getFieldsValue();
+    updateFilters({
+      status: values.status || null,
+      minPrice: values.minPrice || null,
+      maxPrice: values.maxPrice || null,
+    });
+    setPage(1);
+    setIsModalFilterOpen(false);
+  };
 
-  const emptyDescription = keyword
-    ? "Không có kết quả phù hợp"
-    : "Chưa có sản phẩm nào";
+  const emptyDescription = "không có dữ liệu.";
 
-  //dữ liệu đưa vào bảng
-  const dataSource = displayData.map((product) => ({
+  const dataSource = products.map((product) => ({
     key: product._id,
     title: product.title,
     authors: product.authors,
@@ -145,7 +156,7 @@ export default function Product() {
     status: product.status,
     product: product,
   }));
-  //tiêu đề của bảng
+
   const columns = [
     {
       title: "Ảnh",
@@ -233,24 +244,34 @@ export default function Product() {
   };
 
   const handleChangeSort = (value) => {
-    dispatch(setFilters({ sort: value }));
-    const sort = sortMap[value] || {};
-    const sortData = {
+    const sort = sortMap[value];
+    if (!sort) return;
+    updateFilters({
       sortKey: sort.sortKey,
       sortValue: sort.sortValue,
-    };
-    dispatch(setSort(sortData));
+    });
+    setPage(1);
   };
 
-  console.log("render");
-  const handleOkFilter = () => {
-    console.log("chạy")
-    const values = form.getFieldsValue();
-    console.log("Giá trị filter:", values);
+  const handleClearSort = () => {
+    updateFilters({
+      sortKey: null,
+      sortValue: null,
+    });
   };
+
+  // Tính toán value cho Sort dropdown
+  const getSortValue = () => {
+    const { sortKey, sortValue } = filters;
+    if (sortKey === "price" && sortValue === "asc") return "priceAsc";
+    if (sortKey === "price" && sortValue === "desc") return "priceDesc";
+    if (sortKey === "title" && sortValue === "asc") return "titleAsc";
+    if (sortKey === "title" && sortValue === "desc") return "titleDesc";
+    return undefined;
+  };
+
   return (
     <div className="p-4">
-      {/* Thanh công cụ */}
       <div className="flex items-center justify-between mb-4">
         <Button type="primary">
           <Link to="/admin/auth/products/add">Thêm sản phẩm</Link>
@@ -261,57 +282,31 @@ export default function Product() {
           <Button onClick={showModalFilter}>
             <FilterOutlined />
             <span>Lọc</span>
+            {/* Badge hiển thị số filter đang active */}
+            {(filters.status || filters.minPrice || filters.maxPrice) && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-500 text-white rounded-full">
+                {
+                  [filters.status, filters.minPrice, filters.maxPrice].filter(
+                    Boolean
+                  ).length
+                }
+              </span>
+            )}
           </Button>
+
           <Modal
             title="Bộ lọc sản phẩm"
             open={isModalFilterOpen}
             onCancel={handleCancelFilter}
-            cancelButtonProps={{ style: { display: "none" } }}
-            okText="Áp dụng"
             onOk={handleOkFilter}
+            okText="Áp dụng"
+            cancelText="Hủy"
           >
-            {/* <div className="flex flex-col gap-4">
-              <div>
-                <p className="font-medium mb-1">Trạng thái:</p>
-                <Select
-                  placeholder="Chọn trạng thái"
-                  style={{ width: "100%" }}
-                  options={[
-                    { label: "Còn hàng", value: "available" },
-                    { label: "Hết hàng", value: "out-of-stock" },
-                    { label: "Ngừng kinh doanh", value: "discontinued" },
-                  ]}
-                />
-              </div>
-
-              <div>
-                <p className="font-medium mb-1">Giá:</p>
-                <div className="flex gap-2">
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    min={0}
-                    addonAfter="VNĐ"
-                    formatter={(value) =>
-                      `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-                    }
-                    parser={(value) => value.replace(/\D/g, "")}
-                  />
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    min={0}
-                    addonAfter="VNĐ"
-                    formatter={(value) =>
-                      `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-                    }
-                    parser={(value) => value.replace(/\D/g, "")}
-                  />
-                </div>
-              </div>
-            </div> */}
             <Form form={form} layout="vertical">
               <Form.Item label="Trạng thái" name="status">
                 <Select
                   placeholder="Chọn trạng thái"
+                  allowClear
                   options={[
                     { label: "Còn hàng", value: "available" },
                     { label: "Hết hàng", value: "out-of-stock" },
@@ -350,14 +345,15 @@ export default function Product() {
               </Form.Item>
             </Form>
           </Modal>
-          {/* End Filter */}
 
           {/* Sort */}
           <Select
             placeholder="Sắp xếp"
-            value={filters.sort}
+            value={getSortValue()}
             style={{ width: "200px" }}
             onChange={handleChangeSort}
+            allowClear
+            onClear={handleClearSort}
             options={[
               { value: "priceAsc", label: "Giá từ thấp tới cao" },
               { value: "priceDesc", label: "Giá từ cao tới thấp" },
@@ -365,7 +361,22 @@ export default function Product() {
               { value: "titleDesc", label: "Tiêu đề từ Z đến A" },
             ]}
           />
-          {/* End Sort */}
+
+          {/* Button Clear All Filters */}
+          {(filters.sortKey ||
+            filters.status ||
+            filters.minPrice ||
+            filters.maxPrice) && (
+            <Button
+              onClick={() => {
+                resetFilters();
+                form.resetFields();
+              }}
+              danger
+            >
+              Xóa bộ lọc
+            </Button>
+          )}
 
           {/* Action */}
           <Space.Compact style={{ width: "300px" }}>
@@ -382,27 +393,21 @@ export default function Product() {
             />
             <Button type="primary">Áp dụng</Button>
           </Space.Compact>
-          {/* End Action */}
 
           {/* Restore */}
           <Button type="primary" danger>
             <DeleteOutlined />
             <span>Sản phẩm đã xoá</span>
           </Button>
-          {/* End Restore */}
         </div>
       </div>
-      {/*End Thanh công cụ */}
-      {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* Bảng */}
       <Table
         rowSelection={{ type: "checkbox" }}
         columns={columns}
         locale={{
           emptyText: <Empty description={emptyDescription} />,
         }}
-        // bordered={true}
         dataSource={dataSource}
         loading={loading}
         pagination={{
@@ -411,13 +416,11 @@ export default function Product() {
           showSizeChanger: false,
           total: totalProducts,
           onChange: (newPage) => {
-            dispatch(setPage(newPage));
+            setPage(newPage);
           },
         }}
       />
-      {/* End Bảng */}
 
-      {/* Modal xác nhận xoá  */}
       <Modal
         title="Xác nhận xóa sản phẩm"
         open={isModalDeleteOpen}
@@ -429,7 +432,6 @@ export default function Product() {
       >
         <p>Bạn có chắc chắn muốn xóa sản phẩm này không?</p>
       </Modal>
-      {/* End Modal xác nhận xoá  */}
     </div>
   );
 }

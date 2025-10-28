@@ -4,6 +4,7 @@ import HeaderDefault from "../../components/Header";
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import BreadcrumbContent from "../../components/Breadcrumb";
+import SearchProvider from "../../contexts/searchContext";
 const { Footer, Sider, Content } = Layout;
 
 function LayoutDefault() {
@@ -30,25 +31,27 @@ function LayoutDefault() {
           <MenuSider />
         </Sider>
 
-        <Layout>
-          <HeaderDefault
-            collapsed={collapsed}
-            handleClickCollapsed={handleClickCollapsed}
-          />
+        <SearchProvider>
+          <Layout>
+            <HeaderDefault
+              collapsed={collapsed}
+              handleClickCollapsed={handleClickCollapsed}
+            />
 
-          {/* Trick: flex-grow cho Content */}
-          <Content className="overflow-auto flex-1">
-            <BreadcrumbContent/>
-            <Outlet context={{ notification: api }} />
-          </Content>
+            {/* Trick: flex-grow cho Content */}
+            <Content className="overflow-auto flex-1">
+              <BreadcrumbContent />
+              <Outlet context={{ notification: api }} />
+            </Content>
 
-          <Footer
-            className="text-cente"
-            style={{ background: "white", textAlign: "center" }}
-          >
-            Footer
-          </Footer>
-        </Layout>
+            <Footer
+              className="text-cente"
+              style={{ background: "white", textAlign: "center" }}
+            >
+              Footer
+            </Footer>
+          </Layout>
+        </SearchProvider>
       </Layout>
     </>
   );
