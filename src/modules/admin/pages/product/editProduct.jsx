@@ -105,7 +105,6 @@ const AddProduct = () => {
     const images = [];
     if (fileList.length > 0) {
       fileList.forEach((file) => {
-        console.log(file);
         if (file.originFileObj) {
           formData.append("images", file.originFileObj);
           check = true;

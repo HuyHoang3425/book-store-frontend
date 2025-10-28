@@ -8,6 +8,7 @@ import {
   Select,
   InputNumber,
   Empty,
+  Form,
 } from "antd";
 import {
   EditOutlined,
@@ -15,55 +16,69 @@ import {
   FilterOutlined,
 } from "@ant-design/icons";
 import { useEffect, useState } from "react";
-import {
-  deleteProduct,
-  getProducts,
-} from "../../../../services/product.service";
+import { deleteProduct } from "../../../../services/product.service";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchProducts,
+  setFilters,
+  setPage,
+  setSort,
+} from "../../../../redux/productSlice";
 
 export default function Product() {
   const [products, setProducts] = useState([]);
-  const [totalProducts, setTotalProducts] = useState(0);
-  const [page, setPage] = useState(1);
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [form] = Form.useForm();
 
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalFilterOpen, setIsModalFilterOpen] = useState(false);
 
   const {
-    data: searchData,
-    error: searchError,
-    query,
-    loading: searchLoading,
-  } = useSelector((state) => state.search);
+    data,
+    totalProducts,
+    limit,
+    page,
+    error,
+    keyword,
+    loading,
+    sortKey,
+    sortValue,
+    isSearch,
+    filters,
+  } = useSelector((state) => state.product);
+  const dispatch = useDispatch();
 
   const { notification } = useOutletContext();
 
   const navigate = useNavigate();
 
-  // Hàm fetch products
-  const fetchProducts = async (page = 1, sortKey, sortValue) => {
-    setLoading(true);
-    try {
-      const res = await getProducts(page, sortKey, sortValue);
-      setProducts(res.data.products || []);
-      setTotalProducts(res.data.totalProducts || 0);
-      setPage(page);
-    } catch (err) {
-      setError(err.response?.data || "Lỗi lấy dữ liệu sản phẩm!");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   //fetch lấy dữ liệu sản phẩm
+  const fetchDataProducts = () => {
+    dispatch(fetchProducts())
+      .unwrap()
+      .then((data) => {
+        setProducts(data.products);
+      })
+      .catch((err) => {
+        notification.error({
+          message: err?.message,
+          duration: 3,
+        });
+      });
+  };
   useEffect(() => {
-    fetchProducts(1);
-  }, []);
+    fetchDataProducts();
+  }, [page, sortKey, isSearch, sortValue]);
+
+  useEffect(() => {
+    if (error) {
+      notification.error({
+        message: error?.message,
+        duration: 3,
+      });
+    }
+  }, [error]);
 
   //hàm mở modal xoá sản phẩm
   const showModalDelete = (product) => {
@@ -74,16 +89,14 @@ export default function Product() {
   const handleOk = async () => {
     setIsModalDeleteOpen(false);
     try {
-      setLoading(true);
       await deleteProduct(selectedProduct);
       notification.success({
         message: "Xoá sản phẩm thành công!",
         duration: 3,
       });
-      fetchProducts(page);
-      setLoading(false);
+      fetchDataProducts();
     } catch {
-      notification.success({
+      notification.error({
         message: "Xoá sản phẩm thất bại!",
         duration: 3,
       });
@@ -109,27 +122,16 @@ export default function Product() {
   };
   //end lọc sản phẩm
 
-  if (searchError) {
-    notification.error({
-      message: searchError,
-      duration: 3,
-    });
-    return;
-  }
-
   const displayData =
-    searchData?.length > 0
-      ? searchData
-      : searchData?.length === 0 && query !== ""
+    data?.length > 0
+      ? data
+      : data?.length === 0 && keyword.trim() !== ""
       ? []
       : products;
 
-  const emptyDescription =
-    displayData.length === 0 && query !== ""
-      ? "Không có kết quả"
-      : displayData.length === 0
-      ? "Không có dữ liệu"
-      : null;
+  const emptyDescription = keyword
+    ? "Không có kết quả phù hợp"
+    : "Chưa có sản phẩm nào";
 
   //dữ liệu đưa vào bảng
   const dataSource = displayData.map((product) => ({
@@ -231,11 +233,21 @@ export default function Product() {
   };
 
   const handleChangeSort = (value) => {
+    dispatch(setFilters({ sort: value }));
     const sort = sortMap[value] || {};
-    fetchProducts(1, sort.sortKey, sort.sortValue);
+    const sortData = {
+      sortKey: sort.sortKey,
+      sortValue: sort.sortValue,
+    };
+    dispatch(setSort(sortData));
   };
 
-
+  console.log("render");
+  const handleOkFilter = () => {
+    console.log("chạy")
+    const values = form.getFieldsValue();
+    console.log("Giá trị filter:", values);
+  };
   return (
     <div className="p-4">
       {/* Thanh công cụ */}
@@ -256,8 +268,9 @@ export default function Product() {
             onCancel={handleCancelFilter}
             cancelButtonProps={{ style: { display: "none" } }}
             okText="Áp dụng"
+            onOk={handleOkFilter}
           >
-            <div className="flex flex-col gap-4">
+            {/* <div className="flex flex-col gap-4">
               <div>
                 <p className="font-medium mb-1">Trạng thái:</p>
                 <Select
@@ -294,13 +307,55 @@ export default function Product() {
                   />
                 </div>
               </div>
-            </div>
+            </div> */}
+            <Form form={form} layout="vertical">
+              <Form.Item label="Trạng thái" name="status">
+                <Select
+                  placeholder="Chọn trạng thái"
+                  options={[
+                    { label: "Còn hàng", value: "available" },
+                    { label: "Hết hàng", value: "out-of-stock" },
+                    { label: "Ngừng kinh doanh", value: "discontinued" },
+                  ]}
+                />
+              </Form.Item>
+
+              <Form.Item label="Giá">
+                <div className="flex gap-2">
+                  <Form.Item name="minPrice" noStyle>
+                    <InputNumber
+                      style={{ width: "100%" }}
+                      min={0}
+                      placeholder="Từ"
+                      addonAfter="VNĐ"
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                      }
+                      parser={(value) => value.replace(/\D/g, "")}
+                    />
+                  </Form.Item>
+                  <Form.Item name="maxPrice" noStyle>
+                    <InputNumber
+                      style={{ width: "100%" }}
+                      min={0}
+                      placeholder="Đến"
+                      addonAfter="VNĐ"
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+                      }
+                      parser={(value) => value.replace(/\D/g, "")}
+                    />
+                  </Form.Item>
+                </div>
+              </Form.Item>
+            </Form>
           </Modal>
           {/* End Filter */}
 
           {/* Sort */}
           <Select
-            defaultValue="Sắp xếp"
+            placeholder="Sắp xếp"
+            value={filters.sort}
             style={{ width: "200px" }}
             onChange={handleChangeSort}
             options={[
@@ -352,10 +407,12 @@ export default function Product() {
         loading={loading}
         pagination={{
           current: page,
-          pageSize: 10,
+          pageSize: limit,
           showSizeChanger: false,
           total: totalProducts,
-          onChange: (newPage) => fetchProducts(newPage),
+          onChange: (newPage) => {
+            dispatch(setPage(newPage));
+          },
         }}
       />
       {/* End Bảng */}

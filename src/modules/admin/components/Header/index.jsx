@@ -54,8 +54,6 @@ function HeaderDefault(props) {
   const auth = useSelector(state => state.authReducer);
   const dispatch = useDispatch();
 
-  console.log(auth)
-
   const handleClick = () => {
     handleClickCollapsed();
   };
