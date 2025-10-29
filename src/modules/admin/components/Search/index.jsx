@@ -10,7 +10,7 @@ function Search() {
     setHasSearched,
     hasSearched,
     setPage,
-    resetFilters, // Dùng helper function
+    resetFilters,
   } = useContext(SearchContext);
 
   useEffect(() => {

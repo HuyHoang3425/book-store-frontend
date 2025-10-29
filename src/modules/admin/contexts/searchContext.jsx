@@ -7,6 +7,10 @@ const SearchProvider = ({ children }) => {
   const [isSearch, setIsSearch] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [page, setPage] = useState(1);
+  const [actions, setActions] = useState({
+    ids: [],
+    action: null,
+  });
 
   // Quản lý tất cả filters trong 1 object
   const [filters, setFilters] = useState({
@@ -48,6 +52,8 @@ const SearchProvider = ({ children }) => {
         setFilters,
         resetFilters,
         updateFilters,
+        actions,
+        setActions,
       }}
     >
       {children}

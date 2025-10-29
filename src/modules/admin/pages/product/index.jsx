@@ -9,6 +9,7 @@ import {
   InputNumber,
   Empty,
   Form,
+  message,
 } from "antd";
 import {
   EditOutlined,
@@ -19,6 +20,7 @@ import { useContext, useEffect, useState } from "react";
 import {
   deleteProduct,
   getProducts,
+  updateProductByAction,
 } from "../../../../services/product.service";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { SearchContext } from "../../contexts/searchContext";
@@ -38,12 +40,15 @@ export default function Product() {
     filters,
     updateFilters,
     resetFilters,
+    actions,
+    setActions,
   } = useContext(SearchContext);
 
   const [form] = Form.useForm();
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalFilterOpen, setIsModalFilterOpen] = useState(false);
+  const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const { notification } = useOutletContext();
   const navigate = useNavigate();
@@ -71,20 +76,15 @@ export default function Product() {
   };
 
   useEffect(() => {
+    fetchDataProducts();
+  }, [page, filters]);
+
+  useEffect(() => {
     if (isSearch) {
       fetchDataProducts();
       setIsSearch(false);
     }
   }, [isSearch]);
-
-  // Gọi API khi filters thay đổi
-  useEffect(() => {
-    fetchDataProducts();
-  }, [page, filters]);
-
-  useEffect(() => {
-    fetchDataProducts();
-  }, []);
 
   const showModalDelete = (product) => {
     setIsModalDeleteOpen(true);
@@ -119,7 +119,6 @@ export default function Product() {
   };
 
   const showModalFilter = () => {
-    // Set giá trị hiện tại vào form
     form.setFieldsValue({
       status: filters.status,
       minPrice: filters.minPrice,
@@ -134,6 +133,7 @@ export default function Product() {
 
   const handleOkFilter = () => {
     const values = form.getFieldsValue();
+    console.log(values);
     updateFilters({
       status: values.status || null,
       minPrice: values.minPrice || null,
@@ -269,7 +269,67 @@ export default function Product() {
     if (sortKey === "title" && sortValue === "desc") return "titleDesc";
     return undefined;
   };
+  const rowSelection = {
+    type: "checkbox",
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys, selectedRows) => {
+      setSelectedRowKeys(newSelectedRowKeys);
+      console.log(newSelectedRowKeys);
+      setActions((pre) => ({
+        ...pre,
+        ids: newSelectedRowKeys,
+      }));
+    },
+  };
+  const handleChangeAction = (value) => {
+    setActions((pre) => ({
+      ...pre,
+      action: value,
+    }));
+  };
+  const handleClickAction = async () => {
+    // Validate trước
+    if (!actions.action) {
+      notification.warning({
+        message: "Vui lòng chọn hành động!",
+        duration: 3,
+      });
+      return;
+    }
 
+    if (!actions.ids || actions.ids.length === 0) {
+      notification.warning({
+        message: "Vui lòng chọn ít nhất một sản phẩm!",
+        duration: 3,
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await updateProductByAction(actions);
+
+      notification.success({
+        message: res.data?.message || "Thực hiện hành động thành công.",
+        duration: 3,
+      });
+
+      setSelectedRowKeys([]);
+      setActions({
+        ids: [],
+        action: null,
+      });
+
+      await fetchDataProducts();
+    } catch (err) {
+      notification.error({
+        message: err?.message || "Lỗi thực hiện hành động.",
+        duration: 3,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -370,7 +430,6 @@ export default function Product() {
             <Button
               onClick={() => {
                 resetFilters();
-                form.resetFields();
               }}
               danger
             >
@@ -383,15 +442,23 @@ export default function Product() {
             <Select
               placeholder="Chọn hành động"
               style={{ width: "calc(100% - 100px)" }}
+              value={actions.action}
+              onChange={handleChangeAction}
               allowClear
               options={[
-                { value: "deleteAll", label: "🗑 Xoá tất cả" },
+                { value: "delete-all", label: "🗑 Xoá tất cả" },
                 { value: "available", label: "✅ Còn hàng" },
-                { value: "outOfStock", label: "🚫 Hết hàng" },
+                { value: "out-of-stock", label: "🚫 Hết hàng" },
                 { value: "discontinued", label: "🕒 Ngừng kinh doanh" },
               ]}
             />
-            <Button type="primary">Áp dụng</Button>
+            <Button
+              type="primary"
+              onClick={handleClickAction}
+              disabled={!actions.action || selectedRowKeys.length === 0}
+            >
+              Áp dụng
+            </Button>
           </Space.Compact>
 
           {/* Restore */}
@@ -403,7 +470,7 @@ export default function Product() {
       </div>
 
       <Table
-        rowSelection={{ type: "checkbox" }}
+        rowSelection={rowSelection}
         columns={columns}
         locale={{
           emptyText: <Empty description={emptyDescription} />,
