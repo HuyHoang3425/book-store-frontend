@@ -15,17 +15,20 @@ import {
   EditOutlined,
   DeleteOutlined,
   FilterOutlined,
+  RetweetOutlined,
 } from "@ant-design/icons";
 import { useContext, useEffect, useState } from "react";
 import {
   deleteProduct,
+  destroyProduct,
   getProducts,
+  getRestoreProducts,
+  restoreProduct,
   updateProductByAction,
 } from "../../../../services/product.service";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { SearchContext } from "../../contexts/searchContext";
-
-export default function Product() {
+function RestoreProducts() {
   const [products, setProducts] = useState([]);
   const [limit, setLimit] = useState(0);
   const [totalProducts, setTotalProducts] = useState(0);
@@ -45,8 +48,9 @@ export default function Product() {
   } = useContext(SearchContext);
 
   const [form] = Form.useForm();
-  const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isModalRestoreOpen, setIsModalRestoreOpen] = useState(false);
+  const [isModalDestroyOpen, setIsModalDestroyOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState(null);
   const [isModalFilterOpen, setIsModalFilterOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
@@ -56,10 +60,10 @@ export default function Product() {
   const fetchDataProducts = async () => {
     try {
       setLoading(true);
-      const res = await getProducts({
+      const res = await getRestoreProducts({
         page,
         keyword: keyword.trim(),
-        ...filters, // Spread tất cả filters vào API
+        ...filters,
       });
       const { products, limit, totalProducts } = res.data;
       setProducts(products || []);
@@ -67,7 +71,7 @@ export default function Product() {
       setTotalProducts(totalProducts || 0);
     } catch (err) {
       notification.error({
-        message: err?.message || "Tải danh sách sản phẩm thất bại!",
+        message: err?.message || "Tải danh sách sản phẩm đã xoá thất bại!",
         duration: 3,
       });
     } finally {
@@ -84,7 +88,6 @@ export default function Product() {
       setPage((page) => page - 1);
     }
   }, [products]);
-
   useEffect(() => {
     if (isSearch) {
       fetchDataProducts();
@@ -114,14 +117,8 @@ export default function Product() {
     }
   };
 
-  const handleCancel = () => {
-    setIsModalDeleteOpen(false);
-  };
-
-  const onClickEdit = (productId) => {
-    navigate(`/admin/auth/products/edit/${productId}`, {
-      state: { productId },
-    });
+  const onClickRestore = (productId) => {
+    setIsModalRestoreOpen(true);
   };
 
   const showModalFilter = () => {
@@ -220,20 +217,30 @@ export default function Product() {
       render: (_, record) => (
         <Space>
           <Button
-            type="primary"
-            icon={<EditOutlined />}
+            type="default"
+            icon={<RetweetOutlined />}
             size="small"
-            onClick={() => onClickEdit(record.key)}
+            onClick={() => {
+              setSelectedProductId(record.key);
+              setIsModalRestoreOpen(true);
+            }}
+            style={{
+              color: "#52c41a",
+              borderColor: "#52c41a",
+            }}
           >
-            Sửa
+            Khôi phục
           </Button>
           <Button
             danger
             icon={<DeleteOutlined />}
             size="small"
-            onClick={() => showModalDelete(record.product)}
+            onClick={() => {
+              setSelectedProductId(record.key);
+              setIsModalDestroyOpen(true);
+            }}
           >
-            Xóa
+            Xóa vĩnh viễn
           </Button>
         </Space>
       ),
@@ -292,7 +299,6 @@ export default function Product() {
     }));
   };
   const handleClickAction = async () => {
-    // Validate trước
     if (!actions.action) {
       notification.warning({
         message: "Vui lòng chọn hành động!",
@@ -334,13 +340,48 @@ export default function Product() {
       setLoading(false);
     }
   };
+
+  const handleRestore = async () => {
+    try {
+      setIsModalRestoreOpen(false);
+      setLoading(true);
+      await restoreProduct(selectedProductId);
+      notification.success({
+        message: "Khôi phục sản phẩm thành công.",
+        duration: 3,
+      });
+      await fetchDataProducts();
+    } catch (err) {
+      notification.error({
+        message: err?.message || "Lỗi Không thể khôi phục sản phẩm.",
+        duration: 3,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleDestroy = async () => {
+    try {
+      setIsModalDestroyOpen(false);
+      setLoading(true);
+      await destroyProduct(selectedProductId);
+      notification.success({
+        message: "Sản phẩm đã được xoá vĩnh viễn thành công.",
+        duration: 3,
+      });
+      await fetchDataProducts();
+    } catch (err) {
+      notification.error({
+        message: err?.message || "Lỗi Không thể xoá vĩnh viễn sản phẩm.",
+        duration: 3,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <Button type="primary">
-          <Link to="/admin/auth/products/add">Thêm sản phẩm</Link>
-        </Button>
-
+      <div className="flex items-center justify-end mb-4">
         <div className="flex gap-4">
           {/* Filter */}
           <Button onClick={showModalFilter}>
@@ -464,18 +505,6 @@ export default function Product() {
               Áp dụng
             </Button>
           </Space.Compact>
-
-          {/* Restore */}
-          <Button
-            type="primary"
-            danger
-            onClick={() => {
-              navigate(`/admin/auth/products/restore`);
-            }}
-          >
-            <DeleteOutlined />
-            <span>Sản phẩm đã xoá</span>
-          </Button>
         </div>
       </div>
 
@@ -483,13 +512,7 @@ export default function Product() {
         rowSelection={rowSelection}
         columns={columns}
         locale={{
-          emptyText: (
-            <Empty
-              description={
-                keyword ? "không tìm thấy sản phẩm" : "không có dữ liệu"
-              }
-            />
-          ),
+          emptyText: <Empty description={"Không có sản phẩm đã xoá"} />,
         }}
         dataSource={dataSource}
         loading={loading}
@@ -505,16 +528,38 @@ export default function Product() {
       />
 
       <Modal
-        title="Xác nhận xóa sản phẩm"
-        open={isModalDeleteOpen}
-        onOk={handleOk}
-        onCancel={handleCancel}
-        okText="Xóa"
-        cancelText="Hủy"
+        open={isModalRestoreOpen}
+        onOk={handleRestore}
+        onCancel={() => {
+          setIsModalRestoreOpen(false);
+          setSelectedProductId(null);
+        }}
+        title="Khôi phục sản phẩm"
+        cancelText="Huỷ"
+        okText="Khôi phục"
+      >
+        <p>Bạn có chắc chắn muốn khôi phục sản phẩm này không?</p>
+      </Modal>
+
+      <Modal
+        open={isModalDestroyOpen}
+        onOk={handleDestroy}
+        onCancel={() => {
+          setIsModalDestroyOpen(false);
+          setSelectedProductId(null);
+        }}
+        title="Xoá vĩnh viễn sản phẩm"
+        okText="Xoá"
+        cancelText="Huỷ"
         okButtonProps={{ danger: true }}
       >
-        <p>Bạn có chắc chắn muốn xóa sản phẩm này không?</p>
+        <p>
+          Sản phẩm sẽ bị xoá vĩnh viễn và không thể khôi phục. Bạn có chắc
+          không?
+        </p>
       </Modal>
     </div>
   );
 }
+
+export default RestoreProducts;

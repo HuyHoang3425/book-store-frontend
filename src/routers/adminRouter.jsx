@@ -9,6 +9,7 @@ import Product from "../modules/admin/pages/product";
 import Error from "../modules/admin/pages/Error";
 import AddProduct from "../modules/admin/pages/product/addProduct";
 import EditProduct from "../modules/admin/pages/product/editProduct";
+import RestoreProducts from "../modules/admin/pages/Product/restoreProducts";
 
 const adminRoute = [
   {
@@ -56,6 +57,10 @@ const adminRoute = [
               {
                 path: "products/edit/:id",
                 element: <EditProduct />,
+              },
+              {
+                path: "products/restore",
+                element: <RestoreProducts />,
               },
             ],
           },

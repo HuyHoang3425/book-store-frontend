@@ -43,5 +43,38 @@ export const getProductById = (productId) => {
 };
 
 export const updateProductByAction = (data) => {
-  return patch(API.PRODUCT + "/action", data);
+  return patch(API.PRODUCT + `/action`, data);
+};
+
+export const getRestoreProducts = ({
+  keyword,
+  page = 1,
+  sortKey,
+  sortValue,
+  status,
+  minPrice,
+  maxPrice,
+} = {}) => {
+  const query = new URLSearchParams({ page });
+  if (keyword) query.append("keyword", keyword);
+  if (sortKey && sortValue) {
+    query.append("sortKey", sortKey);
+    query.append("sortValue", sortValue);
+  }
+  if (status) query.append("status", status);
+  if (maxPrice) {
+    query.append("maxPrice", maxPrice);
+  }
+  if (minPrice) {
+    query.append("minPrice", minPrice);
+  }
+  return get(API.PRODUCT + `/restore?` + query.toString());
+};
+
+export const restoreProduct = (productId) => {
+  return patch(API.PRODUCT + `/restore/${productId}`);
+}
+
+export const destroyProduct = (productId) => {
+  return del(API.PRODUCT + `/restore/${productId}`);
 };

@@ -5,6 +5,7 @@ const breadcrumbNameMap = {
   products: "Sản phẩm",
   add: "Thêm sản phẩm",
   edit: "Sửa sản phẩm",
+  restore: "Khôi phục",
 };
 
 function BreadcrumbContent() {
