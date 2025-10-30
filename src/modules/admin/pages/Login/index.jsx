@@ -1,28 +1,42 @@
-import { useContext, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { postJson } from "../../../../utils/axiosApi";
-import { API } from "../../../../config/api";
-import { AuthContext } from "../../contexts/authContext";
+import { login } from "../../../../redux/authSlice";
+import { notification } from "antd";
+import { useState, useEffect } from "react";
 
 function Login() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading, error, isAuthenticated } = useSelector(
+    (state) => state.auth
+  );
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
-  const { login } = useContext(AuthContext);
+
+  // ✅ Khi đăng nhập thành công → chuyển hướng
+  useEffect(() => {
+    if (isAuthenticated) {
+      notification.success({
+        message: "Đăng nhập thành công 🎉",
+        duration: 2,
+      });
+      navigate("/dashboard"); // hoặc trang nào bạn muốn
+    }
+  }, [isAuthenticated]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const data = {
-      email,
-      password,
-    };
+    const data = { email, password };
 
     try {
-      const res = await postJson(API.AUTH.LOGIN, data);
-      login(res.data.data.accessToken);
-      // navigate("/admin/auth/dashboard");
+      const result = await dispatch(login(data)).unwrap();
+      console.log("Login success:", result);
     } catch (err) {
-      alert("lỗi không lưu")
+      notification.error({
+        message: err?.message || "Sai email hoặc mật khẩu!",
+        duration: 3,
+      });
     }
   };
 
@@ -52,9 +66,12 @@ function Login() {
             />
             <button
               type="submit"
-              className="bg-blue-200 py-2 px-4 my-5 text-[#555]"
+              disabled={loading}
+              className={`bg-blue-200 py-2 px-4 my-5 text-[#555] ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
-              Đăng nhập
+              {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             </button>
           </form>
         </div>

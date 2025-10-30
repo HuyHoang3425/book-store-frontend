@@ -10,6 +10,7 @@ import {
   Empty,
   Form,
   message,
+  Tooltip,
 } from "antd";
 import {
   EditOutlined,
@@ -48,6 +49,7 @@ export default function Product() {
   const [isModalDeleteOpen, setIsModalDeleteOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalFilterOpen, setIsModalFilterOpen] = useState(false);
+  const [isModalDeleteAllOpen, setIsModalDeleteAllOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
   const { notification } = useOutletContext();
@@ -165,9 +167,14 @@ export default function Product() {
     {
       title: "Ảnh",
       dataIndex: "images",
+      width: 70,
       render: (images) => (
         <Image
           width={50}
+          height={70}
+          style={{
+            objectFit: "cover",
+          }}
           src={
             images && images.length > 0
               ? images[0]
@@ -180,27 +187,68 @@ export default function Product() {
     {
       title: "Tên sách",
       dataIndex: "title",
+      width: 150,
+      render: (text) => (
+        <Tooltip placement="topLeft" title={text}>
+          <div
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "normal",
+            }}
+          >
+            {text}
+          </div>
+        </Tooltip>
+      ),
     },
     {
       title: "Tác giả",
       dataIndex: "authors",
-      render: (authors) => (authors ? authors.join(", ") : "N/A"),
+      width: 150,
+      ellipsis: true,
+      render: (authors) => {
+        const text = authors ? authors.join(", ") : "N/A";
+        return (
+          <Tooltip placement="topLeft" title={text}>
+            <div
+              style={{
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "normal",
+              }}
+            >
+              {text}
+            </div>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "Giá (VNĐ)",
       dataIndex: "price",
+      width: 120,
       render: (price) => (price ? price.toLocaleString() : "N/A"),
     },
     {
       title: "Số lượng",
+      width: 100,
       dataIndex: "quantity",
     },
     {
       title: "Đã bán",
+      width: 100,
       dataIndex: "sold",
     },
     {
       title: "Trạng thái",
+      width: 100,
       dataIndex: "status",
       render: (status) => {
         let color =
@@ -236,6 +284,17 @@ export default function Product() {
             Xóa
           </Button>
         </Space>
+      ),
+    },
+    {
+      title: "Lịch sử",
+      width: 200,
+      dataIndex: "history",
+      render: () => (
+        <>
+          <div>Huy hoàng - Cập nhật</div>
+          <div>30/10/2025</div>
+        </>
       ),
     },
   ];
@@ -291,24 +350,7 @@ export default function Product() {
       action: value,
     }));
   };
-  const handleClickAction = async () => {
-    // Validate trước
-    if (!actions.action) {
-      notification.warning({
-        message: "Vui lòng chọn hành động!",
-        duration: 3,
-      });
-      return;
-    }
-
-    if (!actions.ids || actions.ids.length === 0) {
-      notification.warning({
-        message: "Vui lòng chọn ít nhất một sản phẩm!",
-        duration: 3,
-      });
-      return;
-    }
-
+  const executeAction = async () => {
     try {
       setLoading(true);
       const res = await updateProductByAction(actions);
@@ -334,6 +376,32 @@ export default function Product() {
       setLoading(false);
     }
   };
+  const handleClickAction = async () => {
+    // Validate trước
+    if (!actions.action) {
+      notification.warning({
+        message: "Vui lòng chọn hành động!",
+        duration: 3,
+      });
+      return;
+    }
+
+    if (!actions.ids || actions.ids.length === 0) {
+      notification.warning({
+        message: "Vui lòng chọn ít nhất một sản phẩm!",
+        duration: 3,
+      });
+      return;
+    }
+
+    if (actions.action === "delete-all") {
+      setIsModalDeleteAllOpen(true);
+      return;
+    }
+
+    await executeAction();
+  };
+
   return (
     <div className="p-4">
       <div className="flex items-center justify-between mb-4">
@@ -482,6 +550,7 @@ export default function Product() {
       <Table
         rowSelection={rowSelection}
         columns={columns}
+        rowClassName={() => "h-[70px] align-middle"}
         locale={{
           emptyText: (
             <Empty
@@ -514,6 +583,21 @@ export default function Product() {
         okButtonProps={{ danger: true }}
       >
         <p>Bạn có chắc chắn muốn xóa sản phẩm này không?</p>
+      </Modal>
+
+      <Modal
+        title="Xác nhận xóa sản phẩm"
+        open={isModalDeleteAllOpen}
+        onOk={async () => {
+          setIsModalDeleteAllOpen(false);
+          await executeAction();
+        }}
+        onCancel={() => setIsModalDeleteAllOpen(false)}
+        okText="Xóa"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true }}
+      >
+        <p>Bạn có chắc chắn muốn xóa tất cả sản phẩm đang được chọn không?</p>
       </Modal>
     </div>
   );

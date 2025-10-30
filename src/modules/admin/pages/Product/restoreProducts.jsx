@@ -9,10 +9,9 @@ import {
   InputNumber,
   Empty,
   Form,
-  message,
+  Tooltip,
 } from "antd";
 import {
-  EditOutlined,
   DeleteOutlined,
   FilterOutlined,
   RetweetOutlined,
@@ -21,13 +20,13 @@ import { useContext, useEffect, useState } from "react";
 import {
   deleteProduct,
   destroyProduct,
-  getProducts,
   getRestoreProducts,
   restoreProduct,
   updateProductByAction,
 } from "../../../../services/product.service";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { SearchContext } from "../../contexts/searchContext";
+
 function RestoreProducts() {
   const [products, setProducts] = useState([]);
   const [limit, setLimit] = useState(0);
@@ -50,6 +49,7 @@ function RestoreProducts() {
   const [form] = Form.useForm();
   const [isModalRestoreOpen, setIsModalRestoreOpen] = useState(false);
   const [isModalDestroyOpen, setIsModalDestroyOpen] = useState(false);
+  const [isModalDestroyAllOpen, setIsModalDestroyAllOpen] = useState(false); // Modal mới
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [isModalFilterOpen, setIsModalFilterOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -88,6 +88,7 @@ function RestoreProducts() {
       setPage((page) => page - 1);
     }
   }, [products]);
+
   useEffect(() => {
     if (isSearch) {
       fetchDataProducts();
@@ -95,32 +96,7 @@ function RestoreProducts() {
     }
   }, [isSearch]);
 
-  const showModalDelete = (product) => {
-    setIsModalDeleteOpen(true);
-    setSelectedProduct(product._id);
-  };
-
-  const handleOk = async () => {
-    setIsModalDeleteOpen(false);
-    try {
-      await deleteProduct(selectedProduct);
-      notification.success({
-        message: "Xoá sản phẩm thành công!",
-        duration: 3,
-      });
-      fetchDataProducts();
-    } catch {
-      notification.error({
-        message: "Xoá sản phẩm thất bại!",
-        duration: 3,
-      });
-    }
-  };
-
-  const onClickRestore = (productId) => {
-    setIsModalRestoreOpen(true);
-  };
-
+  //filter
   const showModalFilter = () => {
     form.setFieldsValue({
       status: filters.status,
@@ -162,9 +138,14 @@ function RestoreProducts() {
     {
       title: "Ảnh",
       dataIndex: "images",
+      width: 70,
       render: (images) => (
         <Image
           width={50}
+          height={70}
+          style={{
+            objectFit: "cover",
+          }}
           src={
             images && images.length > 0
               ? images[0]
@@ -177,27 +158,68 @@ function RestoreProducts() {
     {
       title: "Tên sách",
       dataIndex: "title",
+      width: 150,
+      render: (text) => (
+        <Tooltip placement="topLeft" title={text}>
+          <div
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "normal",
+            }}
+          >
+            {text}
+          </div>
+        </Tooltip>
+      ),
     },
     {
       title: "Tác giả",
       dataIndex: "authors",
-      render: (authors) => (authors ? authors.join(", ") : "N/A"),
+      width: 150,
+      ellipsis: true,
+      render: (authors) => {
+        const text = authors ? authors.join(", ") : "N/A";
+        return (
+          <Tooltip placement="topLeft" title={text}>
+            <div
+              style={{
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "normal",
+              }}
+            >
+              {text}
+            </div>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "Giá (VNĐ)",
       dataIndex: "price",
+      width: 120,
       render: (price) => (price ? price.toLocaleString() : "N/A"),
     },
     {
       title: "Số lượng",
+      width: 100,
       dataIndex: "quantity",
     },
     {
       title: "Đã bán",
+      width: 100,
       dataIndex: "sold",
     },
     {
       title: "Trạng thái",
+      width: 100,
       dataIndex: "status",
       render: (status) => {
         let color =
@@ -215,7 +237,7 @@ function RestoreProducts() {
       title: "Hành động",
       key: "action",
       render: (_, record) => (
-        <Space>
+        <div>
           <Button
             type="default"
             icon={<RetweetOutlined />}
@@ -227,6 +249,7 @@ function RestoreProducts() {
             style={{
               color: "#52c41a",
               borderColor: "#52c41a",
+              marginBottom:"10px"
             }}
           >
             Khôi phục
@@ -242,11 +265,23 @@ function RestoreProducts() {
           >
             Xóa vĩnh viễn
           </Button>
-        </Space>
+        </div>
+      ),
+    },
+    {
+      title: "Lịch sử",
+      width: 200,
+      dataIndex: "history",
+      render: () => (
+        <>
+          <div>Huy hoàng - Xoá</div>
+          <div>30/10/2025</div>
+        </>
       ),
     },
   ];
 
+  //sort
   const sortMap = {
     priceAsc: { sortKey: "price", sortValue: "asc" },
     priceDesc: { sortKey: "price", sortValue: "desc" },
@@ -271,7 +306,6 @@ function RestoreProducts() {
     });
   };
 
-  // Tính toán value cho Sort dropdown
   const getSortValue = () => {
     const { sortKey, sortValue } = filters;
     if (sortKey === "price" && sortValue === "asc") return "priceAsc";
@@ -280,6 +314,8 @@ function RestoreProducts() {
     if (sortKey === "title" && sortValue === "desc") return "titleDesc";
     return undefined;
   };
+
+  //action
   const rowSelection = {
     type: "checkbox",
     selectedRowKeys,
@@ -292,18 +328,33 @@ function RestoreProducts() {
       }));
     },
   };
+
   const handleChangeAction = (value) => {
     setActions((pre) => ({
       ...pre,
       action: value,
     }));
   };
+
   const handleClickAction = async () => {
     if (!actions.action) {
       notification.warning({
         message: "Vui lòng chọn hành động!",
         duration: 3,
       });
+      return;
+    }
+
+    // Nếu là xóa vĩnh viễn tất cả, mở modal xác nhận
+    if (actions.action === "delete-all-forever") {
+      if (!actions.ids || actions.ids.length === 0) {
+        notification.warning({
+          message: "Vui lòng chọn ít nhất một sản phẩm!",
+          duration: 3,
+        });
+        return;
+      }
+      setIsModalDestroyAllOpen(true);
       return;
     }
 
@@ -360,6 +411,7 @@ function RestoreProducts() {
       setLoading(false);
     }
   };
+
   const handleDestroy = async () => {
     try {
       setIsModalDestroyOpen(false);
@@ -379,6 +431,36 @@ function RestoreProducts() {
       setLoading(false);
     }
   };
+
+  // Hàm xử lý xóa vĩnh viễn tất cả
+  const handleDestroyAll = async () => {
+    try {
+      setIsModalDestroyAllOpen(false);
+      setLoading(true);
+      const res = await updateProductByAction(actions);
+
+      notification.success({
+        message: res.data?.message || "Xóa vĩnh viễn sản phẩm thành công.",
+        duration: 3,
+      });
+
+      setSelectedRowKeys([]);
+      setActions({
+        ids: [],
+        action: null,
+      });
+
+      await fetchDataProducts();
+    } catch (err) {
+      notification.error({
+        message: err?.message || "Lỗi không thể xóa vĩnh viễn sản phẩm.",
+        duration: 3,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="p-4">
       <div className="flex items-center justify-end mb-4">
@@ -491,10 +573,11 @@ function RestoreProducts() {
               onChange={handleChangeAction}
               allowClear
               options={[
-                { value: "delete-all", label: "🗑 Xoá tất cả" },
-                { value: "available", label: "✅ Còn hàng" },
-                { value: "out-of-stock", label: "🚫 Hết hàng" },
-                { value: "discontinued", label: "🕒 Ngừng kinh doanh" },
+                { value: "restore-all", label: "🔁 Khôi phục" },
+                {
+                  value: "delete-all-forever",
+                  label: "🗑 Xoá tất cả vĩnh viễn",
+                },
               ]}
             />
             <Button
@@ -527,6 +610,7 @@ function RestoreProducts() {
         }}
       />
 
+      {/* Modal khôi phục 1 sản phẩm */}
       <Modal
         open={isModalRestoreOpen}
         onOk={handleRestore}
@@ -541,6 +625,7 @@ function RestoreProducts() {
         <p>Bạn có chắc chắn muốn khôi phục sản phẩm này không?</p>
       </Modal>
 
+      {/* Modal xóa vĩnh viễn 1 sản phẩm */}
       <Modal
         open={isModalDestroyOpen}
         onOk={handleDestroy}
@@ -557,6 +642,32 @@ function RestoreProducts() {
           Sản phẩm sẽ bị xoá vĩnh viễn và không thể khôi phục. Bạn có chắc
           không?
         </p>
+      </Modal>
+
+      {/* Modal xóa vĩnh viễn nhiều sản phẩm - MỚI */}
+      <Modal
+        open={isModalDestroyAllOpen}
+        onOk={handleDestroyAll}
+        onCancel={() => setIsModalDestroyAllOpen(false)}
+        title="Xóa vĩnh viễn nhiều sản phẩm"
+        okText="Xóa tất cả"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true }}
+      >
+        <div>
+          <p className="mb-2">
+            <strong style={{ color: "#ff4d4f" }}>Cảnh báo nghiêm trọng!</strong>
+          </p>
+          <p>
+            Bạn đang thực hiện xóa vĩnh viễn{" "}
+            <strong>{actions.ids?.length || 0}</strong> sản phẩm.
+          </p>
+          <p style={{ marginTop: "8px" }}>
+            Các sản phẩm này sẽ bị xóa hoàn toàn và{" "}
+            <strong>KHÔNG THỂ KHÔI PHỤC</strong>.
+          </p>
+          <p style={{ marginTop: "8px" }}>Bạn có chắc chắn muốn tiếp tục?</p>
+        </div>
       </Modal>
     </div>
   );

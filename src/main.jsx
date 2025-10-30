@@ -8,8 +8,6 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { routes } from "./routers/index.jsx";
 import { store } from "./redux/store.jsx";
 
-
-
 const router = createBrowserRouter(routes);
 
 createRoot(document.getElementById("root")).render(

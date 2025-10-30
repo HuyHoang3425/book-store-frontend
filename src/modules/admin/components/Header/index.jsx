@@ -6,14 +6,12 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import { Dropdown } from "antd";
-import { useContext } from "react";
 import {
   IoIosArrowDown,
 } from "react-icons/io";
-import { AuthContext } from "../../contexts/authContext";
-import {useDispatch, useSelector} from "react-redux";
-import { logout } from "../../../../action/auth";
+import {useDispatch} from "react-redux";
 import Search from "../Search";
+import { logout } from "../../../../redux/authSlice";
 
 const itemsMenuDropdown = [
   {
@@ -50,8 +48,6 @@ const itemsMenuDropdown = [
 
 function HeaderDefault(props) {
   const { collapsed, handleClickCollapsed } = props;
-
-  const auth = useSelector(state => state.authReducer);
   const dispatch = useDispatch();
 
   const handleClick = () => {
