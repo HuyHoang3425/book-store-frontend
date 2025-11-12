@@ -34,7 +34,7 @@ function Login() {
       console.log("Login success:", result);
     } catch (err) {
       notification.error({
-        message: err?.message || "Sai email hoặc mật khẩu!",
+        message: err.response?.data?.message || "Sai email hoặc mật khẩu!",
         duration: 3,
       });
     }

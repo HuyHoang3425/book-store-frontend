@@ -1,2 +1,21 @@
+
+.ant-table-thead > tr {
+  background:linear-gradient(90deg, rgba(3,112,52,1) 0%, rgba(38,163,93,1) 22%, rgba(0,170,77,1) 77%, rgba(46,232,126,1)) !important;
+}
+
+.ant-table-thead > tr > th {
+  color: white !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  padding: 16px 12px !important;
+  /* border-bottom: 3px solid #f5576c !important; */
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  font-size: 13px !important;
+  background-color: transparent !important;
+}
+
+
+
 @import "tailwindcss";
-@config "../tailwind.config.js"
+@config "../tailwind.config.js";

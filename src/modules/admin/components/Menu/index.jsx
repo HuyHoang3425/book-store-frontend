@@ -1,5 +1,5 @@
 import { Menu } from "antd";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   AppstoreOutlined,
   BookOutlined,
@@ -11,53 +11,33 @@ import {
 const items = [
   {
     key: "dashboard",
-    label: <Link to="/dashboard">Dashboard</Link>,
+    label: <Link to="/admin/auth/dashboard">Dashboard</Link>,
     icon: <AppstoreOutlined />,
-    children: [
-      {
-        key: "dashboard-1",
-        label: <Link to="dashboard">Tổng quan</Link>,
-      },
-      {
-        key: "dashboard-2",
-        label: "Thống kê",
-      },
-    ],
+    // children: [
+    //   {
+    //     key: "dashboard-1",
+    //     label: <Link to="dashboard">Tổng quan</Link>,
+    //   },
+    //   {
+    //     key: "dashboard-2",
+    //     label: "Thống kê",
+    //   },
+    // ],
   },
   {
-    key: "stories",
+    key: "products",
     label: <Link to="/admin/auth/products">Quản lý sản phẩm</Link>,
     icon: <BookOutlined />,
   },
   {
     key: "categories",
-    label: "Danh mục",
+    label: <Link to="/admin/auth/categories">Quản lý danh mục</Link>,
     icon: <ReadOutlined />,
-    children: [
-      {
-        key: "categories-list",
-        label: "Danh sách danh mục",
-      },
-      {
-        key: "categories-add",
-        label: "Thêm danh mục",
-      },
-    ],
   },
   {
     key: "users",
     label: "Người dùng",
     icon: <UserOutlined />,
-    children: [
-      {
-        key: "users-list",
-        label: "Danh sách người dùng",
-      },
-      {
-        key: "users-add",
-        label: "Thêm quản trị viên",
-      },
-    ],
   },
   {
     key: "settings",
@@ -67,11 +47,15 @@ const items = [
 ];
 
 function MenuSider() {
+  const location = useLocation();
+  const pathSegments = location.pathname.split("/").filter(Boolean).slice(2);
+  const selectedKey = pathSegments[0]
+  const openKey = selectedKey;
   return (
     <Menu
-      defaultSelectedKeys={["dashboard-1"]}
-      defaultOpenKeys={["dashboard"]}
       mode="inline"
+      selectedKeys={[selectedKey]}
+      defaultOpenKeys={[openKey]}
       items={items}
     />
   );

@@ -9,6 +9,7 @@ export const API = {
     LOGOUT: `/auth/logout`,
   },
   PRODUCT: "products",
+  CATEGORY:"categories",
   UPLOAD: {
     IMAGES: "/upload/images",
   },

@@ -11,11 +11,15 @@ import {
   Form,
   message,
   Tooltip,
+  Menu,
+  Dropdown,
 } from "antd";
 import {
   EditOutlined,
   DeleteOutlined,
   FilterOutlined,
+  DownOutlined,
+  EyeOutlined,
 } from "@ant-design/icons";
 import { useContext, useEffect, useState } from "react";
 import {
@@ -26,6 +30,7 @@ import {
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { SearchContext } from "../../contexts/searchContext";
 
+const components = null;
 export default function Product() {
   const [products, setProducts] = useState([]);
   const [limit, setLimit] = useState(0);
@@ -69,7 +74,8 @@ export default function Product() {
       setTotalProducts(totalProducts || 0);
     } catch (err) {
       notification.error({
-        message: err?.message || "Tải danh sách sản phẩm thất bại!",
+        message:
+          err.response?.data?.message || "Tải danh sách sản phẩm thất bại!",
         duration: 3,
       });
     } finally {
@@ -165,6 +171,12 @@ export default function Product() {
 
   const columns = [
     {
+      title: "STT",
+      dataIndex: "stt",
+      width: 40,
+      render: (text, record, index) => (page - 1) * limit + index + 1,
+    },
+    {
       title: "Ảnh",
       dataIndex: "images",
       width: 70,
@@ -172,9 +184,7 @@ export default function Product() {
         <Image
           width={50}
           height={70}
-          style={{
-            objectFit: "cover",
-          }}
+          style={{ objectFit: "cover" }}
           src={
             images && images.length > 0
               ? images[0]
@@ -206,31 +216,6 @@ export default function Product() {
       ),
     },
     {
-      title: "Tác giả",
-      dataIndex: "authors",
-      width: 150,
-      ellipsis: true,
-      render: (authors) => {
-        const text = authors ? authors.join(", ") : "N/A";
-        return (
-          <Tooltip placement="topLeft" title={text}>
-            <div
-              style={{
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "normal",
-              }}
-            >
-              {text}
-            </div>
-          </Tooltip>
-        );
-      },
-    },
-    {
       title: "Giá (VNĐ)",
       dataIndex: "price",
       width: 120,
@@ -248,8 +233,9 @@ export default function Product() {
     },
     {
       title: "Trạng thái",
-      width: 100,
+      width: 130,
       dataIndex: "status",
+      align: "center",
       render: (status) => {
         let color =
           status === "available"
@@ -265,37 +251,54 @@ export default function Product() {
     {
       title: "Hành động",
       key: "action",
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() => onClickEdit(record.key)}
-          >
-            Sửa
-          </Button>
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-            onClick={() => showModalDelete(record.product)}
-          >
-            Xóa
-          </Button>
-        </Space>
-      ),
+      width: 100,
+      render: (_, record) => {
+        const items = [
+          {
+            key: "view",
+            label: "Xem",
+            icon: <EyeOutlined />,
+            //  onClick: () => onClickEdit(record.key),
+          },
+          {
+            key: "edit",
+            label: "Sửa",
+            icon: <EditOutlined />,
+            onClick: () => onClickEdit(record.key),
+          },
+          {
+            key: "delete",
+            label: "Xóa",
+            icon: <DeleteOutlined />,
+            onClick: () => showModalDelete(record.product),
+          },
+        ];
+
+        return (
+          <Dropdown menu={{ items }} placement="right" arrow>
+            <Button type="primary">Hành động</Button>
+          </Dropdown>
+        );
+      },
     },
     {
       title: "Lịch sử",
-      width: 200,
-      dataIndex: "history",
-      render: () => (
-        <>
-          <div>Huy hoàng - Cập nhật</div>
-          <div>30/10/2025</div>
-        </>
-      ),
+      children: [
+        {
+          title: "Người tạo",
+          dataIndex: "creator",
+          key: "creator",
+          width: "15%",
+          align: "center",
+        },
+        {
+          title: "Người cập nhật",
+          dataIndex: "updater",
+          key: "updater",
+          width: "15%",
+          align: "center",
+        },
+      ],
     },
   ];
 
@@ -369,7 +372,7 @@ export default function Product() {
       await fetchDataProducts();
     } catch (err) {
       notification.error({
-        message: err?.message || "Lỗi thực hiện hành động.",
+        message: err.response?.data?.message || "Lỗi thực hiện hành động.",
         duration: 3,
       });
     } finally {
@@ -548,6 +551,8 @@ export default function Product() {
       </div>
 
       <Table
+        // bordered
+        components={components}
         rowSelection={rowSelection}
         columns={columns}
         rowClassName={() => "h-[70px] align-middle"}

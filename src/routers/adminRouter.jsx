@@ -7,9 +7,12 @@ import { Outlet } from "react-router-dom";
 import PublicRoutes from "../modules/admin/components/PublicRoutes";
 import Product from "../modules/admin/pages/product";
 import Error from "../modules/admin/pages/Error";
-import AddProduct from "../modules/admin/pages/product/addProduct";
+import AddProduct from "../modules/admin/pages/Product/addProduct";
 import EditProduct from "../modules/admin/pages/product/editProduct";
 import RestoreProducts from "../modules/admin/pages/Product/restoreProducts";
+import Category from "../modules/admin/pages/Category";
+import AddCategory from "../modules/admin/pages/Category/addCategory";
+import EditCategory from "../modules/admin/pages/Category/editCategory";
 
 const adminRoute = [
   {
@@ -61,6 +64,18 @@ const adminRoute = [
               {
                 path: "products/restore",
                 element: <RestoreProducts />,
+              },
+              {
+                path: "categories",
+                element: <Category />,
+              },
+              {
+                path: "categories/add",
+                element: <AddCategory />,
+              },
+              {
+                path: "categories/edit/:categoryId",
+                element: <EditCategory />,
               },
             ],
           },

@@ -30,7 +30,7 @@ export const addProduct = (data) => {
   return postJson(API.PRODUCT, data);
 };
 
-export const editProduct = (data, id) => {
+export const editProductById = (data, id) => {
   return patch(API.PRODUCT + `/${id}`, data);
 };
 

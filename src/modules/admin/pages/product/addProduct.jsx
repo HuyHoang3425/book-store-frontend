@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Card,
   Row,
@@ -16,9 +16,12 @@ import { Editor } from "@tinymce/tinymce-react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import UploadImages from "../../components/UploadImages";
 import { uploadImages } from "../../../../services/upload.service";
+import { getCategories } from "../../../../services/category.service";
+import { configOption } from "../../../../helpers/products.helper";
 
 const AddProduct = () => {
   const [fileList, setFileList] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const editorRef = useRef(null);
@@ -26,6 +29,23 @@ const AddProduct = () => {
   const { notification } = useOutletContext();
 
   const [form] = Form.useForm();
+
+  const fetchDataCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await getCategories();
+      setCategories(res?.data?.categories || []);
+    } catch (err) {
+      notification.error({
+        message: err.response?.data?.message || "Lỗi lấy dữ liệu.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchDataCategories();
+  }, []);
 
   const onReset = () => {
     form.resetFields();
@@ -70,6 +90,7 @@ const AddProduct = () => {
         quantity: values.quantity,
         price: values.price,
         weight: values.weight,
+        categoryId: values.categoryId,
       }).filter(
         ([_, v]) => v !== undefined && v !== null && v !== "" && v !== 0
       )
@@ -132,6 +153,10 @@ const AddProduct = () => {
               ]}
             >
               <Input />
+            </Form.Item>
+
+            <Form.Item label="Danh mục sản phẩm" name="categoryId">
+              <Select allowClear options={configOption(categories)} />
             </Form.Item>
 
             <Form.Item

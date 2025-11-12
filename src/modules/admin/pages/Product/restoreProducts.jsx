@@ -10,6 +10,7 @@ import {
   Empty,
   Form,
   Tooltip,
+  Dropdown,
 } from "antd";
 import {
   DeleteOutlined,
@@ -71,7 +72,9 @@ function RestoreProducts() {
       setTotalProducts(totalProducts || 0);
     } catch (err) {
       notification.error({
-        message: err?.message || "Tải danh sách sản phẩm đã xoá thất bại!",
+        message:
+          err.response?.data?.message ||
+          "Tải danh sách sản phẩm đã xoá thất bại!",
         duration: 3,
       });
     } finally {
@@ -136,6 +139,12 @@ function RestoreProducts() {
 
   const columns = [
     {
+      title: "STT",
+      dataIndex: "stt",
+      width: 40,
+      render: (text, record, index) => (page - 1) * limit + index + 1,
+    },
+    {
       title: "Ảnh",
       dataIndex: "images",
       width: 70,
@@ -177,31 +186,6 @@ function RestoreProducts() {
       ),
     },
     {
-      title: "Tác giả",
-      dataIndex: "authors",
-      width: 150,
-      ellipsis: true,
-      render: (authors) => {
-        const text = authors ? authors.join(", ") : "N/A";
-        return (
-          <Tooltip placement="topLeft" title={text}>
-            <div
-              style={{
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "normal",
-              }}
-            >
-              {text}
-            </div>
-          </Tooltip>
-        );
-      },
-    },
-    {
       title: "Giá (VNĐ)",
       dataIndex: "price",
       width: 120,
@@ -221,6 +205,7 @@ function RestoreProducts() {
       title: "Trạng thái",
       width: 100,
       dataIndex: "status",
+      align: "center",
       render: (status) => {
         let color =
           status === "available"
@@ -236,37 +221,36 @@ function RestoreProducts() {
     {
       title: "Hành động",
       key: "action",
-      render: (_, record) => (
-        <div>
-          <Button
-            type="default"
-            icon={<RetweetOutlined />}
-            size="small"
-            onClick={() => {
+      width: 100,
+      align: "center",
+      render: (_, record) => {
+        const items = [
+          {
+            key: "restore",
+            label: "Khôi phục",
+            icon: <RetweetOutlined />,
+            onClick: () => {
               setSelectedProductId(record.key);
               setIsModalRestoreOpen(true);
-            }}
-            style={{
-              color: "#52c41a",
-              borderColor: "#52c41a",
-              marginBottom:"10px"
-            }}
-          >
-            Khôi phục
-          </Button>
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            size="small"
-            onClick={() => {
+            },
+          },
+          {
+            key: "delete-forever",
+            label: "Xoá vĩnh viễn",
+            icon: <DeleteOutlined />,
+            onClick: () => {
               setSelectedProductId(record.key);
               setIsModalDestroyOpen(true);
-            }}
-          >
-            Xóa vĩnh viễn
-          </Button>
-        </div>
-      ),
+            },
+          },
+        ];
+
+        return (
+          <Dropdown menu={{ items }} placement="right" arrow>
+            <Button type="primary">Hành động</Button>
+          </Dropdown>
+        );
+      },
     },
     {
       title: "Lịch sử",
@@ -384,7 +368,7 @@ function RestoreProducts() {
       await fetchDataProducts();
     } catch (err) {
       notification.error({
-        message: err?.message || "Lỗi thực hiện hành động.",
+        message: err.response?.data?.message || "Lỗi thực hiện hành động.",
         duration: 3,
       });
     } finally {
@@ -404,7 +388,8 @@ function RestoreProducts() {
       await fetchDataProducts();
     } catch (err) {
       notification.error({
-        message: err?.message || "Lỗi Không thể khôi phục sản phẩm.",
+        message:
+          err.response?.data?.message || "Lỗi Không thể khôi phục sản phẩm.",
         duration: 3,
       });
     } finally {
@@ -424,7 +409,9 @@ function RestoreProducts() {
       await fetchDataProducts();
     } catch (err) {
       notification.error({
-        message: err?.message || "Lỗi Không thể xoá vĩnh viễn sản phẩm.",
+        message:
+          err.response?.data?.message ||
+          "Lỗi Không thể xoá vĩnh viễn sản phẩm.",
         duration: 3,
       });
     } finally {
@@ -453,7 +440,9 @@ function RestoreProducts() {
       await fetchDataProducts();
     } catch (err) {
       notification.error({
-        message: err?.message || "Lỗi không thể xóa vĩnh viễn sản phẩm.",
+        message:
+          err.response?.data?.message ||
+          "Lỗi không thể xóa vĩnh viễn sản phẩm.",
         duration: 3,
       });
     } finally {

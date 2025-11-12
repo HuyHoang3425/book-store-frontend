@@ -17,7 +17,7 @@ function LayoutDefault() {
     <>
       {contextHolder}
       <Layout className="h-screen">
-        <Sider width={300} collapsed={collapsed} theme="light">
+        <Sider width={200} collapsed={collapsed} theme="light">
           <div className="flex items-center justify-center gap-5 font-bold">
             {collapsed ? (
               <div className="sider__logo text-7xl mb-5">H</div>
@@ -41,7 +41,7 @@ function LayoutDefault() {
             {/* Trick: flex-grow cho Content */}
             <Content className="overflow-auto flex-1">
               <BreadcrumbContent />
-              <Outlet context={{ notification: api }} />
+              <Outlet context={{ notification: api }}/>
             </Content>
 
             <Footer

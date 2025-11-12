@@ -15,17 +15,20 @@ import {
 } from "antd";
 import {
   addProduct,
-  editProduct,
+  editProductById,
   getProductById,
 } from "../../../../services/product.service";
 import { Editor } from "@tinymce/tinymce-react";
 import { useNavigate, useOutletContext, useLocation } from "react-router-dom";
 import UploadImages from "../../components/UploadImages";
 import { uploadImages } from "../../../../services/upload.service";
+import { configOption } from "../../../../helpers/products.helper";
+import { getCategories } from "../../../../services/category.service";
 
-const AddProduct = () => {
+const editProduct = () => {
   const [fileList, setFileList] = useState([]);
   const [product, setProduct] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [isEditorReady, setIsEditorReady] = useState(false);
@@ -37,6 +40,23 @@ const AddProduct = () => {
 
   const location = useLocation();
   const { productId } = location.state;
+
+  const fetchDataCategories = async () => {
+    try {
+      setLoading(true);
+      const res = await getCategories();
+      setCategories(res?.data?.categories || []);
+    } catch (err) {
+      notification.error({
+        message: err?.message || "Lỗi lấy dữ liệu.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchDataCategories();
+  }, []);
 
   //gọi api lấy thông tin sản phẩm
   useEffect(() => {
@@ -74,6 +94,7 @@ const AddProduct = () => {
         page: product.page,
         format: product.format,
         weight: product.weight,
+        categoryId: product.categoryId,
       });
 
       if (product.images && product.images.length > 0) {
@@ -115,7 +136,7 @@ const AddProduct = () => {
     }
     if (check) {
       try {
-        setLoading(true)
+        setLoading(true);
         const data = await uploadImages(formData);
         if (data.data.length > 0) {
           data.data.forEach((file) => {
@@ -150,6 +171,7 @@ const AddProduct = () => {
         quantity: values.quantity,
         price: values.price,
         weight: values.weight,
+        categoryId: values.categoryId,
       }).filter(
         ([_, v]) => v !== undefined && v !== null && v !== "" && v !== 0
       )
@@ -173,7 +195,7 @@ const AddProduct = () => {
 
     try {
       setLoading(true);
-      await editProduct(data, productId);
+      await editProductById(data, productId);
       setFileList([]);
       editorRef.current?.setContent("");
       notification.success({
@@ -223,15 +245,23 @@ const AddProduct = () => {
             <Form.Item
               label="Tên sản phẩm"
               name="title"
-              rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm!" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập tên sản phẩm!" },
+              ]}
             >
               <Input />
+            </Form.Item>
+
+            <Form.Item label="Danh mục sản phẩm" name="categoryId">
+              <Select allowClear options={configOption(categories)} />
             </Form.Item>
 
             <Form.Item
               label="Tác giả"
               name="authors"
-              rules={[{ required: true, message: "Vui lòng nhập tên tác giả!" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập tên tác giả!" },
+              ]}
             >
               <Select
                 mode="tags"
@@ -415,4 +445,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default editProduct;
